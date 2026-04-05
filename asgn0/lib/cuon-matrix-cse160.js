@@ -10,13 +10,13 @@ class Vector3 {
     constructor(opt_src) {
         var v = new Float32Array(3);
         if (opt_src && typeof opt_src === 'object') {
-          v[0] = opt_src[0];
-          v[1] = opt_src[1];
-          v[2] = opt_src[2];
+          v[0] = opt_src[0]; // x 
+          v[1] = opt_src[1]; // y 
+          v[2] = opt_src[2]; // z 
         }
-        this.elements = v;
-    }
 
+        this.elements = v; 
+    }
     /**
      * Copy vector.
      * @param src source vector
@@ -44,23 +44,25 @@ class Vector3 {
       * @return this
       */
     add(other) {
-        // Insert your code here.
-        // This function should change this vector (this.elements) and not create a new vector.
+          
+      this.elements[0] += other.elements[0]; // x
+      this.elements[1] += other.elements[1]; // y 
+      this.elements[2] += other.elements[2]; // z  
 
-        // Don't delete the return statement.
-        return this;
-    };
+      return this;
+    }; 
 
     /**
       * Subtract other from this vector.
       * @return this
       */
     sub(other) {
-        // Insert your code here.
-        // This function should change this vector (this.elements) and not create a new vector.
-
-        // Don't delete the return statement.
-        return this;
+      
+      this.elements[0] -= other.elements[0]; // x
+      this.elements[1] -= other.elements[1]; // y 
+      this.elements[2] -= other.elements[2]; // z  
+          
+      return this;
     };
 
     /**
@@ -68,11 +70,12 @@ class Vector3 {
       * @return this
       */
     div(scalar) {
-        // Insert your code here.
-        // This function should change this vector (this.elements) and not create a new vector.
+  
+      this.elements[0] /= scalar; // x
+      this.elements[1] /= scalar; // y 
+      this.elements[2] /= scalar; // z   
 
-        // Don't delete the return statement.
-        return this;
+      return this;
     };
 
     /**
@@ -80,11 +83,12 @@ class Vector3 {
       * @return this
       */
     mul(scalar) {
-        // Insert your code here.
-        // This function should change this vector (this.elements) and not create a new vector.
+ 
+      this.elements[0] *= scalar; // x
+      this.elements[1] *= scalar; // y 
+      this.elements[2] *= scalar; // z   
 
-        // Don't delete the return statement.
-        return this;
+      return this;
     };
 
     /**
@@ -95,6 +99,15 @@ class Vector3 {
         // Insert your code here.
         let d = 0; // Modify this line to calculate this vector's magnitude.
 
+        let x1 = other1.elements[0] // x1 
+        let y1 = other1.elements[1] // y1 
+        let z1 = other1.elements[2] // z1  
+
+        let x2 = other2.elements[0] // x2 
+        let y2 = other2.elements[1] // y2 
+        let z2 = other2.elements[2] // z2  
+
+        d = (x1 * x2) + (y1 * y2) + (z1 * z2) 
         // Don't delete the return statement.
         return d;
     }
@@ -108,6 +121,26 @@ class Vector3 {
         // This function should create and return a new vector.
         let v3 = new Vector3(); // Modify this line to calculate cross product between other1 and other2.
 
+        let x3, y3, z3; 
+
+        let x1 = other1.elements[0] // x1 
+        let y1 = other1.elements[1] // y1 
+        let z1 = other1.elements[2] // z1  
+
+        let x2 = other2.elements[0] // x2 
+        let y2 = other2.elements[1] // y2 
+        let z2 = other2.elements[2] // z2  
+        
+        // compute 
+        x3 = (y1 * z2) - (z1 * y2)
+        y3 = (z1 * x2) - (x1 * z2)
+        z3 = (x1 * y2) - (y1 * x2) 
+
+        // store in v3
+        v3.elements[0] = x3 
+        v3.elements[1] = y3 
+        v3.elements[2] = z3  
+
         // Don't delete the return statement.
         return v3;
     }
@@ -120,6 +153,12 @@ class Vector3 {
         // Insert your code here.
         let m = 0; // Modify this line to calculate this vector's magnitude.
 
+        let x = this.elements[0] // x 
+        let y = this.elements[1] // y 
+        let z = this.elements[2] // z  
+
+        m = Math.sqrt(x**2 + y**2 + z**2); 
+
         // Don't delete the return statement.
         return m;
     };
@@ -129,11 +168,17 @@ class Vector3 {
       * @return this
       */
     normalize() {
-        // Insert your code here.
-        // This function should change this vector (this.elements) and not create a new vector.
 
-        // Don't delete the return statement.
-        return this;
+      let mag = this.magnitude() 
+
+      if (mag != 0) {  
+        this.elements[0] = this.elements[0] / mag; // x
+        this.elements[1] = this.elements[1] / mag; // y 
+        this.elements[2] = this.elements[2] / mag; // z  
+      } 
+
+      // Don't delete the return statement.
+      return this;
     };
 }
 

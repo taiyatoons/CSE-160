@@ -41,18 +41,30 @@
     <br> 
     <input type="button" value="Draw" onclick="handleDrawEvent()"></input> 
 
-    <!-- 3rd operation --> 
+    <!-- Operations --> 
     <br><br>  
-    <label for="pet-select">Operation:</label>
+    <label for="op-select">Operation:</label>
 
-      <select name="pets" id="pet-select">
+      <select name="ops" id="ops">
         <option value="">--Please choose an option--</option>
         <option value="add">Add</option>
-        <option value="sub">Sub</option>
+        <option value="sub">Subtract</option>
+        <option value="mul">Multiply</option>
+        <option value="div">Divide</option>
+        <option value="angle">Angle Between</option>
+        <option value="area">Area</option>
+        <option value="mag">Magnitude</option>
+        <option value="norm">Normalize</option>
       </select>
 
+    <!-- Scalar -->
+    <label for="name">Scalar: </label> 
 
-    <input type="button" value="Enter" onclick="handleDrawEvent()"></input>
+    <input type="text" id="scalar" name="scalar" required 
+          minLength="4" maxLength="8" size="10"> 
+
+    <br> 
+    <input type="button" value="Calculate" onclick="handleDrawOperationEvent()"></input>
 
   </body>
 </html>
