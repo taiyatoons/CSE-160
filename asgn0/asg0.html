@@ -12,12 +12,36 @@
     <script src="asg0.js"></script>
     <script src="lib/cuon-matrix-cse160.js"></script> 
 
+    <!-- v1 --> 
     <br><br> 
-    <label for="name">V1:</label>
+    <label for="name">v1: </label>
+    <label for="name">x </label>
 
-    <input type="text" id="name" name="name" required 
+    <input type="text" id="v1_x" name="v1_x" required 
           minLength="4" maxLength="8" size="10"> 
 
+    <label for="name">y </label>
+
+    <input type="text" id="v1_y" name="v1_y" required 
+          minLength="4" maxLength="8" size="10"> 
+    
+    <!-- v2  --> 
+    <br> 
+    <label for="name">v2: </label>
+    <label for="name">x </label>
+
+    <input type="text" id="v2_x" name="v2_x" required 
+          minLength="4" maxLength="8" size="10"> 
+
+    <label for="name">y </label>
+
+    <input type="text" id="v2_y" name="v2_y" required 
+          minLength="4" maxLength="8" size="10"> 
+
+    <br> 
+    <input type="button" value="Draw" onclick="handleDrawEvent()"></input> 
+
+    <!-- 3rd operation --> 
     <br><br>  
     <label for="pet-select">Operation:</label>
 
