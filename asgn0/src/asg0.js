@@ -1,4 +1,10 @@
 // DrawTriangle.js (c) 2012 matsuda
+
+//   Name: Kyra Hannah 
+//   email: klhannah@ucsc.edu 
+
+//   *no notes to grader 
+
 let v1, v2, v3, v4; 
 
 function main() {  
