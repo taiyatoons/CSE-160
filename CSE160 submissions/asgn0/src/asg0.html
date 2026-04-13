@@ -1,0 +1,77 @@
+<!--
+   Name: Kyra Hannah 
+   email: klhannah@ucsc.edu 
+
+   *no notes to grader 
+--> 
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Draw a blue rectangle (canvas version)</title>
+  </head>
+
+  <body onload="main()">
+    <canvas id="cnv1" width="400" height="400">
+      Please use a browser that supports "canvas"
+    </canvas>
+    <script src="asg0.js"></script>
+    <script src="../lib/cuon-matrix-cse160.js"></script> 
+
+    <!-- v1 --> 
+    <br><br> 
+    <label for="name">v1: </label>
+    <label for="name">x </label>
+
+    <input type="text" id="v1_x" name="v1_x" required 
+          minLength="4" maxLength="8" size="10"> 
+
+    <label for="name">y </label>
+
+    <input type="text" id="v1_y" name="v1_y" required 
+          minLength="4" maxLength="8" size="10"> 
+    
+    <!-- v2  --> 
+    <br> 
+    <label for="name">v2: </label>
+    <label for="name">x </label>
+
+    <input type="text" id="v2_x" name="v2_x" required 
+          minLength="4" maxLength="8" size="10"> 
+
+    <label for="name">y </label>
+
+    <input type="text" id="v2_y" name="v2_y" required 
+          minLength="4" maxLength="8" size="10"> 
+
+    <br> 
+    <input type="button" value="Draw" onclick="handleDrawEvent()"></input> 
+
+    <!-- Operations --> 
+    <br><br>  
+    <label for="op-select">Operation:</label>
+
+      <select name="ops" id="ops">
+        <option value="">--Please choose an option--</option>
+        <option value="add">Add</option>
+        <option value="sub">Subtract</option>
+        <option value="mul">Multiply</option>
+        <option value="div">Divide</option>
+        <option value="angle">Angle Between</option>
+        <option value="area">Area</option>
+        <option value="mag">Magnitude</option>
+        <option value="norm">Normalize</option>
+      </select>
+
+    <!-- Scalar -->
+    <label for="name">Scalar: </label> 
+
+    <input type="text" id="scalar" name="scalar" required 
+          minLength="4" maxLength="8" size="10"> 
+
+    <br> 
+    <input type="button" value="Calculate" onclick="handleDrawOperationEvent()"></input>
+
+  </body>
+</html>
