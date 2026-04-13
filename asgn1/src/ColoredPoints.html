@@ -1,53 +1,108 @@
 <!DOCTYPE html>
-<html lang="en"><head>
-<meta http-equiv="content-type" content="text/html; charset=UTF-8">
-    <meta charset="utf-8">
-    <title>Draw a point (1)</title>
-  </head>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Assignment 1</title>
 
-  <body onload="main()">
+  <style>
+    .panel {
+      margin: 10px 0;
+      padding: 10px;
+      border: 1px solid #ccc;
+      width: fit-content;
+    }
+
+    .top-section {
+      display: flex;
+      align-items: flex-start; /* aligns top */
+      gap: 20px;
+    }
+
+    .right-panel img {
+      width: 200px;
+      height: auto;
+      display: block;
+    }
+
+  </style>
+</head>
+
+<body onload="main()">
+
+<div class="top-section">
     <canvas id="webgl" width="400" height="400">
-    Please use a browser that supports "canvas"
+      Please use a browser that supports canvas
     </canvas>
 
+    <div class="right-panel">
+      <h4>Reference Image Sketch - Click 'Drawing' to render on cavas</h4> 
+      <img src="../lib/ref_image.jpg" alt="Reference Image" style="width:40%;height:20%;"> 
+    </div>
+  </div>
+
+  <p id="numdot">XXX</p>
+
+  <div class="panel" id="paintPanel">
+
+    <h3>Paint Tools</h3>
+
+    <button id="green">Green</button>
+    <button id="red">Red</button>
+    <button id="clearButton">Clear</button>
+
+    <br><br>
+
+    <button id="pointButton">Point</button>
+    <button id="triButton">Triangle</button>
+    <button id="circleButton">Circle</button>
+
+    <br><br>
+    <button id="drawButton">Drawing </button>
+
     <p>
-
-    <p id="numdot"> XXX </p>
-
-    <button type="button" id="green">Green</button>
-    <button type="button" id="red">Red</button> 
-
-    <button type="button" id="clearButton">Clear</button> 
+      Red <input type="range" min="0" max="100" id="redSlide">
+    </p>
+    
     <p> 
-
-    <button type="button" id="pointButton">Point</button>
-    <button type="button" id="triButton">Triangle</button> 
-    <button type="button" id="circleButton">Circle</button> 
-
-    <br><br> 
-    <button type="button" id="drawButton">Drawing</button> 
-    <button type="button" id="pongButton">Pong</button> 
-
-    <p> 
-    Red <input type="range" min="0" max="100" class="slider" id="redSlide"> 
-    <p> 
-    Green <input type="range" min="0" max="100" class="slider" id="greenSlide"> 
-    <p> 
-    Blue <input type="range" min="0" max="100" class="slider" id="blueSlide"> 
-
-    <p> 
-    Size <input type="range" min="5" max="100" class="slider" id="sizeSlide"> 
-
-    <p> 
-    Segments <input type="range" min="5" max="100" class="slider" id="segSlide"> 
+      Green <input type="range" min="0" max="100" id="greenSlide">
+    </p>
+    
+    <p>
+      Blue <input type="range" min="0" max="100" id="blueSlide">
     </p>
 
-    <script src="../lib/webgl-utils.js"></script>
-    <script src="../lib/webgl-debug.js"></script>
-    <script src="../lib/cuon-utils.js"></script>
-    <script src="Triangle.js"></script>
-    <script src="Circle.js"></script> 
-    <script src="Point.js"></script>
-    <script src="ColoredPoints.js"></script>
-  </body>
+    <p>
+      Size <input type="range" min="5" max="100" id="sizeSlide">
+    </p>
+
+    <p>
+    Segments <input type="range" min="5" max="100" id="segSlide">
+    </p>
+
+  </div>
+
+
+  <div class="panel" id="pongPanel">
+
+    <h4>Pong Mode</h4>
+    <button id="pongButton">Play pong</button> 
+    <button id="exitButton">Exit pong</button> 
+    <p>Controls: w/s or Arrow Keys</p>
+
+  </div>
+
+  <script src="../lib/webgl-utils.js"></script>
+  <script src="../lib/webgl-debug.js"></script>
+  <script src="../lib/cuon-utils.js"></script>
+
+  <script src="Triangle.js"></script>
+  <script src="Circle.js"></script>
+  <script src="Point.js"></script>
+
+  <script src="graphTriangles.js"></script>
+  <script src="GraphandGradient.js"></script>
+  <script src="playPong.js"></script>
+
+  <script src="ColoredPoints.js"></script>
+</body>
 </html>
