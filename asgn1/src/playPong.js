@@ -72,13 +72,17 @@ let keys = {
   arrowDown: false 
 }
 
-let animationId = null; 
 
 function playPong() { 
+
   lastTime = 0;
+
+  p1_score = 0;
+  p2_score = 0; 
 
   ball.x = 0;
   ball.y = 0;
+
   ball.vx = BALL_SPEED * (Math.random() > 0.5 ? 1 : -1);
   ball.vy = (Math.random() * 2 - 1) * BALL_SPEED;
 
@@ -89,11 +93,7 @@ function playPong() {
 
   gl.clearColor(0.0, 0.0, 0.0, 1.0);
 
-  if (animationId !== null) {
-    cancelAnimationFrame(animationId);
-  } 
-
-  animationId = requestAnimationFrame(callback); 
+  requestAnimationFrame(callback); 
 
 }
 
@@ -110,7 +110,6 @@ function callback(time) {
   lastTime = time;
 
   gl.clear(gl.COLOR_BUFFER_BIT);
-
   gl.uniform4f(u_FragColor, 1.0, 1.0, 1.0, 1.0); 
 
   sendTextToHTML("P1: " + p1_score + " | P2: " + p2_score, "numdot"); 
@@ -119,11 +118,12 @@ function callback(time) {
   updateBall(deltaTime);
 
   drawBall(ball.x, ball.y);
-  drawPaddles();
+
+  drawPaddles(); 
 
   console.log("pong running");
 
-  animationId = requestAnimationFrame(callback);
+  requestAnimationFrame(callback);
 }
 
 function drawBall() {
@@ -157,7 +157,7 @@ function drawPaddles() {
   let rp_right = paddle_right.x + width/2; 
   let rp_top = paddle_right.y + paddle_right.height/2; 
   let rp_bottom = paddle_right.y - paddle_right.height/2;   
-
+ 
   // left paddle 
   drawTriangle([
     lp_left,  lp_top,
@@ -277,7 +277,7 @@ function updatePaddles(dt) {
   // move toward target
   let diff = target - paddle_right.y;
   // clamp movement to max speed
-  let bot_move = Math.max(-botMaxSpeed, Math.min(botMaxSpeed, diff / dt));
+  let bot_move = Math.max(-botMaxSpeed, Math.min(botMaxSpeed, diff));
 
   // apply movement
   paddle_right.y += bot_move * dt;

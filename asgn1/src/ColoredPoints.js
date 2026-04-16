@@ -54,7 +54,7 @@ function setupWebGL() {
 
   // Get the rendering context for WebGL
   // gl = getWebGLContext(canvas); 
-  gl = canvas.getContext("webgl"); // { , preserveDrawingBuffer: true}); // helps fps performance 
+  gl = canvas.getContext("webgl", { preserveDrawingBuffer: true});  // helps fps performance 
   if (!gl) {
     console.log('Failed to get the rendering context for WebGL');
     return;
@@ -110,21 +110,15 @@ function addActionsForHtmlUI() {
   document.getElementById('red').onclick = function() { g_selectedColor = [1.0,0.0,0.0,1.0]; }; 
   document.getElementById('clearButton').onclick = function() { 
     g_shapesList=[]; 
-    
     if (currentMode === "paint") { 
       renderAllShapes();
     }
-
   }; 
 
   document.getElementById('drawButton').onclick = function() { drawGraphImage();}; 
 
   document.getElementById('exitButton').onclick = function() { 
     currentMode = "paint"; 
-
-    gl.useProgram(gl.program);
-    gl.enableVertexAttribArray(a_Position);
-
     renderAllShapes();
   }; 
   document.getElementById('pongButton').onclick = function() { 
