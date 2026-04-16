@@ -72,6 +72,8 @@ let keys = {
   arrowDown: false 
 }
 
+let animationId = null; 
+
 function playPong() { 
   lastTime = 0;
 
@@ -87,7 +89,11 @@ function playPong() {
 
   gl.clearColor(0.0, 0.0, 0.0, 1.0);
 
-  requestAnimationFrame(callback); 
+  if (animationId !== null) {
+    cancelAnimationFrame(animationId);
+  } 
+
+  animationId = requestAnimationFrame(callback); 
 
 }
 
@@ -105,6 +111,8 @@ function callback(time) {
 
   gl.clear(gl.COLOR_BUFFER_BIT);
 
+  gl.uniform4f(u_FragColor, 1.0, 1.0, 1.0, 1.0); 
+
   sendTextToHTML("P1: " + p1_score + " | P2: " + p2_score, "numdot"); 
 
   updatePaddles(deltaTime);
@@ -115,7 +123,7 @@ function callback(time) {
 
   console.log("pong running");
 
-  requestAnimationFrame(callback);
+  animationId = requestAnimationFrame(callback);
 }
 
 function drawBall() {
