@@ -7,7 +7,7 @@ class Cube {
     // this.size = 5.0; 
     // this.segments = 10; 
     //this.matrix = new Matrix4();
-    constructor() {
+    constructor(type="default") {
       this.color = [1,1,1,1];
       this.matrix = new Matrix4();
 
@@ -22,6 +22,184 @@ class Cube {
         G: [1,1,1],
         H: [0,1,1],
     };
+
+    if (type === "body") {
+      // top right 
+      this.vertices.C[1] += 0.2; 
+      // top left 
+      this.vertices.D[1] += 0.2; 
+      // back/top right 
+      this.vertices.G[1] -= 0.4; 
+      // back/top left 
+      this.vertices.H[1] -= 0.4; 
+      // back/bottom left 
+      this.vertices.F[1] -= 0.5; 
+      this.vertices.F[2] += 0.07; 
+      // back/bottom right 
+      this.vertices.E[1] -= 0.5; 
+      this.vertices.E[2] += 0.07; 
+      // front/bottom right 
+      this.vertices.B[1] -= 0.4; 
+      this.vertices.B[2] -= 0.05; 
+      // front/bottom left 
+      this.vertices.A[1] -= 0.4; 
+      this.vertices.A[2] -= 0.05;
+    }
+    if (type === "frontright") {
+      // front/bottom right 
+      this.vertices.B[1] += 0.1;
+      this.vertices.B[2] -= 0.3; 
+      // front/bottom left 
+      this.vertices.A[1] += 0.1;
+      this.vertices.A[2] -= 0.3;
+    }
+    if (type === "frontright2") {
+      // top right 
+      this.vertices.C[1] -= 0.1;
+      this.vertices.C[2] -= 0.25;
+
+      // top left 
+      this.vertices.D[1] -= 0.1;
+      this.vertices.D[2] -= 0.25;
+    }
+    if (type === "frontleft") {
+      // front/bottom right 
+      this.vertices.B[1] += 0.1;
+      this.vertices.B[2] -= 0.3; 
+      // front/bottom left 
+      this.vertices.A[1] += 0.1;
+      this.vertices.A[2] -= 0.3;
+    }
+    if (type === "frontleft2") {
+      // top right 
+      this.vertices.C[1] -= 0.1;
+      this.vertices.C[2] -= 0.25;
+
+      // top left 
+      this.vertices.D[1] -= 0.1;
+      this.vertices.D[2] -= 0.25; 
+    } 
+    if (type === "backright"){ 
+      // top right 
+      this.vertices.C[1] -= 0.1;
+      this.vertices.C[2] -= 0.1;
+
+      // top left 
+      this.vertices.D[1] -= 0.1;
+      this.vertices.D[2] -= 0.25;
+
+      // front/bottom right 
+      this.vertices.B[1] -= .03;
+      this.vertices.B[2] += 0.05; 
+      // front/bottom left 
+      this.vertices.A[1] -= 0.03;
+      this.vertices.A[2] += 0.05;
+
+      // back/bottom left 
+      this.vertices.E[1] += 0.2;
+      this.vertices.E[2] += 0.65;
+      // back/bottom right 
+      this.vertices.F[1] += 0.2;
+      this.vertices.F[2] += 0.65;
+    } 
+    if (type === "backright2") { 
+      // top right 
+      this.vertices.C[1] -= 0.0;
+      this.vertices.C[2] -= 0.55;
+
+      // top left 
+      this.vertices.D[1] -= 0.1;
+      this.vertices.D[2] -= 0.55;
+
+      // back/top right  
+      this.vertices.G[1] -= 0.1;
+      this.vertices.G[2] += 0.2; 
+      // back/top left 
+      this.vertices.H[1] -= 0.1;
+      this.vertices.H[2] += 0.15;
+
+
+      // front/bottom right 
+      this.vertices.B[2] -= .3;
+      this.vertices.B[1] += 0.15; 
+      // front/bottom left 
+      this.vertices.A[2] -= 0.3;
+      this.vertices.A[1] += 0.15;
+
+
+      // back/bottom left 
+      this.vertices.E[1] += 0.15;
+      this.vertices.E[2] -= 0.1;
+      // back/bottom right 
+      this.vertices.F[1] += 0.15;
+      this.vertices.F[2] -= 0.1;
+    }
+    if (type === "backleft") { 
+      // top right 
+      this.vertices.C[1] -= 0.1;
+      this.vertices.C[2] -= 0.1;
+
+      // top left 
+      this.vertices.D[1] -= 0.1;
+      this.vertices.D[2] -= 0.25;
+
+      // front/bottom right 
+      this.vertices.B[1] -= .03;
+      this.vertices.B[2] += 0.05; 
+      // front/bottom left 
+      this.vertices.A[1] -= 0.03;
+      this.vertices.A[2] += 0.05;
+
+      // back/bottom left 
+      this.vertices.E[1] += 0.2;
+      this.vertices.E[2] += 0.65;
+      // back/bottom right 
+      this.vertices.F[1] += 0.2;
+      this.vertices.F[2] += 0.65;
+    }
+    if (type === "backleft2") { 
+      // top right 
+      this.vertices.C[1] -= 0.0;
+      this.vertices.C[2] -= 0.55;
+
+      // top left 
+      this.vertices.D[1] -= 0.1;
+      this.vertices.D[2] -= 0.55;
+
+      // back/top right  
+      this.vertices.G[1] -= 0.1;
+      this.vertices.G[2] += 0.2; 
+      // back/top left 
+      this.vertices.H[1] -= 0.1;
+      this.vertices.H[2] += 0.15;
+
+
+      // front/bottom right 
+      this.vertices.B[2] -= .3;
+      this.vertices.B[1] += 0.15; 
+      // front/bottom left 
+      this.vertices.A[2] -= 0.3;
+      this.vertices.A[1] += 0.15;
+
+
+      // back/bottom left 
+      this.vertices.E[1] += 0.15;
+      this.vertices.E[2] -= 0.1;
+      // back/bottom right 
+      this.vertices.F[1] += 0.15;
+      this.vertices.F[2] -= 0.1;
+    }
+    if (type === "earL") { 
+      // top left 
+      this.vertices.C[1] -= 0.1;
+      this.vertices.C[2] -= 0.1;
+    }
+    if (type === "earR") {  
+      // top right 
+      this.vertices.G[1] -= 0.1;
+      this.vertices.G[2] -= 0.1;
+    }
+
   }
 
   // Render this shape 
