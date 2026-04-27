@@ -47,7 +47,6 @@ class Cylinder {
         x1, h, z1,
         x2, h, z2
       ]);
-
       drawTriangle3D([
         x1, 0, z1,
         x2, h, z2,

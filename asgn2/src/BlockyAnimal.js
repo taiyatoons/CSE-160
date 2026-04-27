@@ -1,5 +1,19 @@
 // ColoredPoint.js (c) 2012 matsuda
 // Vertex shader program
+
+// Kyra Hannah 
+// klhannah@ucsc.edu 
+
+// NOTE TO GRADER:  
+
+//  -   3D animal: Elephant 
+//  -   fps averages ~50-70 frames, but sometimes drops / freezes for a second. 
+//      Not the best performance, but still runs without much issue 
+//  -   poke animation has not been implemented :( *sorry, I am very tired 
+//  -   basic animation is an idle / breathing pose, the torso contracts and expands slightly, front legs and trunk move, 
+//      and ears rotate slightly 
+//  -   'non-cube primitive' is a cylinder shape used for the eyes 
+
 var VSHADER_SOURCE = `
   attribute vec4 a_Position; 
   uniform mat4 u_ModelMatrix; 
@@ -35,14 +49,34 @@ let g_rotateX = 0; // left/right
 
 // performance 
 let g_lastFrameTime = performance.now();
-let g_fps = 0;
+let g_fps = 0; 
+
+// animal 
+let g_globalAngle=0; 
+
+// front legs 
+let g_upperLegAngle=0; 
+let g_lowerLegAngle=0; 
+let g_footAngle=0;  
+
+// back legs 
+let g_backUpperLegAngle=0; 
+let g_backLowerLegAngle=0; 
+let g_backFootAngle=0;
+
+// animation 
+let g_idleAnimation = false; 
+let g_frontFootAngle = 0; 
+let g_breathe=0;
+let g_trunkAngle=0;
+let g_headBob=0;
+let g_earFlap=0;
 
 function setupWebGL() { 
   // Retrieve <canvas> element
   canvas = document.getElementById('webgl');
 
   // Get the rendering context for WebGL
-  // gl = getWebGLContext(canvas); 
   gl = canvas.getContext("webgl", { preserveDrawingBuffer: true});  // helps fps performance 
   if (!gl) {
     console.log('Failed to get the rendering context for WebGL');
@@ -92,37 +126,18 @@ function connectVariablesToGLSL() {
 
 }
 
-let g_globalAngle=0; 
-
-// front legs 
-let g_upperLegAngle=0; 
-let g_lowerLegAngle=0; 
-let g_footAngle=0;  
-
-// back legs 
-let g_backUpperLegAngle=0; 
-let g_backLowerLegAngle=0; 
-let g_backFootAngle=0;
-
-// animation 
-let g_idleAnimation = false; 
-let g_frontFootAngle = 0; 
-let g_breathe=0;
-let g_trunkAngle=0;
-let g_headBob=0;
-let g_earFlap=0;
-
-
 function addActionsForHtmlUI() { 
 
   // animation 
   document.getElementById('animationOffButton').onclick = function() { g_idleAnimation=false;};  
   document.getElementById('animationOnButton').onclick = function() { g_idleAnimation=true;};  
 
+  // joints  
   document.getElementById('upperLegSlide').addEventListener('mousemove', function() { g_upperLegAngle = this.value; renderScene(); });  
   document.getElementById('lowerLegSlide').addEventListener('mousemove', function() { g_lowerLegAngle = this.value; renderScene(); }); 
   document.getElementById('footSlide').addEventListener('mousemove', function() { g_footAngle = this.value; renderScene(); }); 
 
+  // camera 
   document.getElementById('angleSlide').addEventListener('mousemove', function() { g_globalAngle = this.value; renderScene(); }); 
 
 }
@@ -137,16 +152,19 @@ function main() {
   // set up actions for the HTML UI elements 
   addActionsForHtmlUI(); 
 
+  // global camera 
   canvas.onmousedown = function(ev) {
     g_isDragging = true;
     g_lastX = ev.clientX;
     g_lastY = ev.clientY;
   };
 
+  // stop dragging 
   canvas.onmouseup = function() {
     g_isDragging = false;
   };
 
+  // is dragging
   canvas.onmousemove = function(ev) {
     if (!g_isDragging) return;
 
@@ -167,16 +185,16 @@ function main() {
   requestAnimationFrame(tick); 
 }
 
+// tick vars 
 var g_startTime=performance.now()/1000.0; 
 var g_seconds=performance.now()/1000.0-g_startTime; 
 
 function tick() { 
-
+  // fps 
   let now = performance.now(); 
 
   let delta = now - g_lastFrameTime;
   g_lastFrameTime = now;
-
   g_fps = 1000 / delta;
 
   // update time
@@ -185,28 +203,29 @@ function tick() {
   // console.log(performance.now()); 
 
   updateAnimationAngles(); 
-
   renderScene();  
 
   sendTextToHTML("FPS: " + g_fps.toFixed(1), "fps"); 
 
   requestAnimationFrame(tick); 
 }
-var g_shapesList = []; 
 
 function updateAnimationAngles() { 
   if (g_idleAnimation) {
 
+    // timed head/body breathing 
     let headCycle = Math.sin(g_seconds * 0.8); 
     let bodyCycle = Math.sin(g_seconds * 0.8 - 0.3); 
 
     // breathing
-    // g_breathe = 0.03 * Math.sin(g_seconds * 1.5); 
     g_breathe = 0.02 * (bodyCycle + 1) / 2;
+    // head
+    g_headBob = 3 * headCycle;  
 
     // trunk
     g_trunkAngle = 2.5 * Math.sin(g_seconds * 1.2 + 1);
 
+    // angle for foot in idle animation 
     g_frontFootAngle = -7; 
     
     // legs (idle shift)
@@ -214,15 +233,11 @@ function updateAnimationAngles() {
     g_lowerLegAngle = 10 + 1.5 * Math.sin(g_seconds + Math.PI);
     g_footAngle = 1 + Math.sin(g_seconds);
 
-    // head
-    // g_headBob = 3 * Math.sin(g_seconds * 0.8);
-    g_headBob = 3 * headCycle; 
-
     // ears
     g_earFlap = 2 * Math.sin(g_seconds * 1.5 + 2);
 
   } else {
-    // reset to neutral
+    // reset 
     g_breathe = 0;
     g_trunkAngle = 0;
     g_headBob = 0;
@@ -233,15 +248,12 @@ function updateAnimationAngles() {
 
 // draw every shape that is supposed to be in the canvas
 function renderScene() { 
- 
-  // Check the time at the start of this function 
 
   // Pass the matrix to u_ModelMatrix attribute
-  // var globalRotMat=new Matrix4().rotate(g_globalAngle,0,1,0); 
   var globalRotMat = new Matrix4()
-    .rotate(g_globalAngle, 0, 1, 0) // slider rotation (Y axis)
-    .rotate(g_rotateX, 0, 1, 0)     // mouse horizontal drag
-    .rotate(g_rotateY, 1, 0, 0);    // mouse vertical drag
+    .rotate(g_globalAngle, 0, 1, 0) // y slider roation 
+    .rotate(g_rotateX, 0, 1, 0)     // x drag
+    .rotate(g_rotateY, 1, 0, 0);    // y drag
   gl.uniformMatrix4fv(u_GlobalRotateMatrix, false, globalRotMat.elements); 
   
   // Clear <canvas>
@@ -252,7 +264,7 @@ function renderScene() {
   let body = new Cube("body"); 
   body.color = [0.9,0.9,0.9,1.0]; 
   body.matrix.translate(-.3, 0, 0);  
-  body.matrix.scale(0.6, 0.4 + g_breathe * 0.7, 0.8); 
+  body.matrix.scale(0.6, 0.4 + g_breathe * 0.7, 0.8); // animation update 
 
   body.render(); 
   // --------------------------------------------------
@@ -264,16 +276,11 @@ function renderScene() {
 
   headBase.matrix.rotate(90, 0, 1, 0); 
 
-  // attach to body space (tweak this!)
   headBase.matrix.translate(-0.525, 0.15, -0.22);
 
-  // tilt head downward like your sketch
-  // headBase.matrix.rotate(-25, 0,0,1);
-  headBase.matrix.rotate(-25 + g_headBob, 0,0,1); 
+  headBase.matrix.rotate(-25 + g_headBob, 0,0,1); // animation update 
 
   let headMatrix = new Matrix4(headBase.matrix);
-
-  // small connector piece (optional)
   headBase.matrix.scale(0.2, 0.2, 0.2);
 
   headBase.render();
@@ -283,10 +290,8 @@ function renderScene() {
   headTop.color = [0.9,0.9,0.9,1.0];
   headTop.matrix = new Matrix4(headMatrix);
 
-  // position forward
-  headTop.matrix.translate(0.5, 0.1, 0);
+  headTop.matrix.translate(0.5, 0.1, 0); 
 
-  // slight tilt
   headTop.matrix.rotate(20, 0,0,1);
 
   let headTopMatrix = new Matrix4(headTop.matrix);
@@ -302,11 +307,13 @@ function renderScene() {
   snout.matrix = new Matrix4(headMatrix);
 
   snout.matrix.translate(0.7, 0., 0.085);
+
   snout.matrix.rotate(20, 0,0,1);
 
-  let snoutMatrix = new Matrix4(snout.matrix);
+  let snoutMatrix = new Matrix4(snout.matrix); 
 
   snout.matrix.scale(0.25, 0.25, 0.25);
+
   snout.render();
 
 
@@ -316,8 +323,8 @@ function renderScene() {
   earL.matrix = new Matrix4(headTopMatrix);
 
   earL.matrix.translate(0.03, .2, -.048);
-  // earL.matrix.rotate(30, 0,0,1);
-  earL.matrix.rotate(30 + g_earFlap, 0,0,1); 
+
+  earL.matrix.rotate(30 + g_earFlap, 0,0,1); // animation update 
 
   let earLMatrix = new Matrix4(earL.matrix);
 
@@ -325,15 +332,14 @@ function renderScene() {
 
   earL.render();
 
-
   
   let earR = new Cube("earR");
   earR.color = [1,1,1,1]; 
   earR.matrix = new Matrix4(headTopMatrix);
 
   earR.matrix.translate(0.03, .2, .45);
-  // earR.matrix.rotate(30, 0,0,1); 
-  earR.matrix.rotate(30 - g_earFlap, 0,0,1); 
+
+  earR.matrix.rotate(30 - g_earFlap, 0,0,1); // animation update 
 
   let earRMatrix = new Matrix4(earR.matrix);
 
@@ -342,69 +348,36 @@ function renderScene() {
   earR.render();
     
 
-  let tusk = new Cube();
-  tusk.color = [1,1,1,1];
-  tusk.matrix = new Matrix4(snoutMatrix);
 
-  tusk.matrix.translate(0., .15, -0.05);
-  tusk.matrix.rotate(-20, 0,0,1);
+  let tuskL = new Cube();
+  tuskL.color = [1,1,1,1];
+  tuskL.matrix = new Matrix4(snoutMatrix);
 
-  tusk.matrix.scale(0.4, 0.05, 0.05);
-  tusk.render();
+  tuskL.matrix.translate(0., .15, -0.05);
+
+  tuskL.matrix.rotate(-20, 0,0,1);
+
+  tuskL.matrix.scale(0.4, 0.05, 0.05);
+  tuskL.render();
+
 
   let tuskR = new Cube();
   tuskR.color = [1,1,1,1];
   tuskR.matrix = new Matrix4(snoutMatrix);
 
   tuskR.matrix.translate(0., .15, 0.25);
+
   tuskR.matrix.rotate(-20, 0,0,1);
 
   tuskR.matrix.scale(0.4, 0.05, 0.05);
   tuskR.render(); 
 
-  let trunk1 = new Cube();
-  trunk1.color = [0.7,0.7,0.7,1];
-  trunk1.matrix = new Matrix4(snoutMatrix);
 
-  trunk1.matrix.translate(0.14, -0.24, .05);
-  // trunk1.matrix.rotate(10, 0,0,1);
-  trunk1.matrix.rotate(10 + g_trunkAngle, 0,0,1); 
 
-  let trunk1Matrix = new Matrix4(trunk1.matrix);
-
-  trunk1.matrix.scale(0.15, 0.25, 0.15);
-  trunk1.render();
-
-  let trunk2 = new Cube();
-  trunk2.color = [0.65,0.65,0.65,1];
-  trunk2.matrix = new Matrix4(trunk1Matrix);
-
-  trunk2.matrix.translate(0.05, -0.21, .01);
-  // trunk2.matrix.rotate(10, 0,0,1);
-  trunk2.matrix.rotate(10 + g_trunkAngle * 1.2, 0,0,1); 
-
-  let trunk2Matrix = new Matrix4(trunk2.matrix);
-
-  trunk2.matrix.scale(0.13, 0.23, 0.13);
-  trunk2.render();
-
-  let trunk3 = new Cube();
-  trunk3.color = [0.6,0.6,0.6,1];
-  trunk3.matrix = new Matrix4(trunk2Matrix);
-
-  trunk3.matrix.translate(.04, -0.19, 0.003);
-  // trunk3.matrix.rotate(10, 0,0,1); 
-  trunk3.matrix.rotate(10 + g_trunkAngle * 1.4, 0,0,1); 
-
-  trunk3.matrix.scale(0.12, 0.2, 0.12);
-  trunk3.render();
-
-  
   let eyeL = new Cylinder();
   eyeL.color = [0,0,0,1];
   eyeL.matrix = new Matrix4(headTopMatrix);
 
-  // position stays the same
   eyeL.matrix.translate(0.2, 0.2, 0.43);
   eyeL.matrix.rotate(90, 1, 0, 0)
   // squish 
@@ -412,6 +385,7 @@ function renderScene() {
 
   eyeL.render(); 
 
+  
   let eyeR = new Cylinder();
   eyeR.color = [0,0,0,1];
   eyeR.matrix = new Matrix4(headTopMatrix);
@@ -421,8 +395,50 @@ function renderScene() {
   // squish  
   eyeR.matrix.scale(0.03, 0.03, 0.07);
 
-  eyeR.render(); 
-  // ------------------------------------------------
+  eyeR.render();  
+// ----------------------------------------------------- 
+
+
+// trunk -----------------------------------------------
+  let trunk1 = new Cube();
+  trunk1.color = [0.7,0.7,0.7,1];
+  trunk1.matrix = new Matrix4(snoutMatrix);
+
+  trunk1.matrix.translate(0.14, -0.24, .05);
+
+  trunk1.matrix.rotate(10 + g_trunkAngle, 0,0,1); 
+
+  let trunk1Matrix = new Matrix4(trunk1.matrix);
+
+  trunk1.matrix.scale(0.15, 0.25, 0.15);
+  trunk1.render();
+
+
+  let trunk2 = new Cube();
+  trunk2.color = [0.65,0.65,0.65,1];
+  trunk2.matrix = new Matrix4(trunk1Matrix);
+
+  trunk2.matrix.translate(0.05, -0.21, .01);
+
+  trunk2.matrix.rotate(10 + g_trunkAngle * 1.2, 0,0,1); // animation update 
+
+  let trunk2Matrix = new Matrix4(trunk2.matrix);
+
+  trunk2.matrix.scale(0.13, 0.23, 0.13);
+  trunk2.render();
+
+
+  let trunk3 = new Cube();
+  trunk3.color = [0.6,0.6,0.6,1];
+  trunk3.matrix = new Matrix4(trunk2Matrix);
+
+  trunk3.matrix.translate(.04, -0.19, 0.003);
+
+  trunk3.matrix.rotate(10 + g_trunkAngle * 1.4, 0,0,1); // animation update 
+
+  trunk3.matrix.scale(0.12, 0.2, 0.12);
+  trunk3.render();
+  // --------------------------------------------------------
 
 
   // front right leg ----------------------------------------
@@ -441,7 +457,6 @@ function renderScene() {
   frontright.render() 
 
 
-
   var frontright2 = new Cube("frontright2"); 
   frontright2.color = [0.65,0.65,0.65,1]; 
   frontright2.matrix = new Matrix4(upperLegMatrix); 
@@ -458,7 +473,6 @@ function renderScene() {
   frontright2.render() 
 
 
-
   var frontfootR = new Cube(); 
   frontfootR.color = [0.6,0.6,0.6,1]; 
   frontfootR.matrix = new Matrix4(lowerLegMatrix); 
@@ -472,10 +486,10 @@ function renderScene() {
   frontfootR.matrix.scale(0.25, .1, .22);
 
   frontfootR.render() 
- // -----------------------------------------------------
+  // -------------------------------------------------------
 
 
-  // front left leg -----------------------------------------
+ // front left leg -----------------------------------------
   var frontleft = new Cube("frontleft"); 
   frontleft.color = [0.7,0.7,0.7,1]; 
   frontleft.matrix.translate(-.4, -.35, 0); 
@@ -489,7 +503,6 @@ function renderScene() {
   frontleft.matrix.scale(0.25, .7, .2); 
 
   frontleft.render() 
-
 
 
   var frontright2 = new Cube("frontleft2"); 
@@ -508,12 +521,10 @@ function renderScene() {
   frontright2.render() 
 
 
-
   var frontfootR = new Cube(); 
   frontfootR.color = [0.6,0.6,0.6,1]; 
   frontfootR.matrix = new Matrix4(lowerLegMatrix); 
   frontfootR.matrix.translate(-0.006, -0.02, -0.023); 
-
 
   frontfootR.matrix.translate(0, .1, 0); 
   frontfootR.matrix.rotate(-g_frontFootAngle, 1,0,0);
@@ -525,8 +536,7 @@ function renderScene() {
   // -------------------------------------------------
 
 
-
-  // back right leg ---------------------------------
+  // back right leg ----------------------------------
   let backright = new Cube("backright"); 
   backright.color = [0.7,0.7,0.7,1]; 
   backright.matrix.translate(.13, -.45, .55); 
@@ -540,7 +550,6 @@ function renderScene() {
   backright.matrix.scale(0.25, .7, .2); 
 
   backright.render() 
-
 
 
   var backright2 = new Cube("backright2"); 
@@ -559,12 +568,10 @@ function renderScene() {
   backright2.render() 
 
 
-
   var backfootR = new Cube(); 
   backfootR.color = [0.6,0.6,0.6,1]; 
   backfootR.matrix = new Matrix4(backLowerLegMatrix); 
   backfootR.matrix.translate(-0.005, 0.03, -.056);
-
 
   backfootR.matrix.translate(0, .1, 0); 
   backfootR.matrix.rotate(-g_backFootAngle, 1,0,0);
@@ -590,7 +597,6 @@ function renderScene() {
   backleft.matrix.scale(0.25, .7, .2); 
 
   backleft.render() 
-
 
 
   var backright2 = new Cube("backleft2"); 

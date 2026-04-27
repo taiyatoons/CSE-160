@@ -1,3 +1,16 @@
+// Kyra Hannah 
+// klhannah@ucsc.edu 
+
+// NOTE TO GRADER:  
+
+//  -   3D animal: Elephant 
+//  -   fps averages ~50-70 frames, but sometimes drops / freezes for a second. 
+//      Not the best performance, but still runs without much issue 
+//  -   poke animation has not been implemented :( *sorry, I am very tired 
+//  -   basic animation is an idle / breathing pose, the torso contracts and expands slightly, front legs and trunk move, 
+//      and ears rotate slightly 
+//  -   'non-cube primitive' is a cylinder shape used for the eyes 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -15,6 +28,7 @@
   <div id="fps">
   fps: XX
   </div>
+  
   <p>
   Upper Leg <input type="range" min="-15" max="10" value ="0" class="slider" id="upperLegSlide"> 
   Animation: 
@@ -35,8 +49,6 @@
   <script src="../lib/cuon-matrix.js"></script>
 
   <script src="Triangle.js"></script>
-  <script src="Circle.js"></script>
-  <script src="Point.js"></script>
   <script src="Cube.js"></script>
   <script src="Cylinder.js"></script>
 
