@@ -21,6 +21,7 @@ var FSHADER_SOURCE = `
   uniform vec4 u_FragColor; 
   uniform sampler2D u_Sampler0; 
   uniform int u_whichTexture; 
+  uniform float u_texColorWeight; 
   void main() { 
 
     if (u_whichTexture == -2) { 
@@ -222,10 +223,15 @@ function main() {
   // setup canvas and gl variables 
   setupWebGL(); 
   
+  // for camera.js access 
+  g_camera = new Camera(canvas); 
+
   // setup GLSL shader programs and connect GLSL variables 
   connectVariablesToGLSL(); 
   // set up actions for the HTML UI elements 
   addActionsForHtmlUI(); 
+
+  document.onkeydown = keydown; 
 
   initTextures(); 
 
@@ -298,22 +304,122 @@ function updateAnimationAngles() {
   }
 }
 
-var g_eye=[0,0,3]; 
-var g_at=[0,0,-100]; 
-var g_up=[0,1,0]; 
+function keydown(ev) { 
+  //if (ev.keyCode == 39) { // right arrow 
+    //g_eye[0] += .2; 
+  //} else if (ev.keyCode == 37) { // left arrow 
+  //  g_eye[0] -= .2; 
+  //}
+
+  //renderAllShapes(); 
+  if (ev.keyCode == 87) { // W
+    g_camera.forward();
+  }
+
+  else if (ev.keyCode == 83) { // S
+    g_camera.back();
+  }
+
+  else if (ev.keyCode == 65) { // A
+    g_camera.left();
+  }
+
+  else if (ev.keyCode == 68) { // D
+    g_camera.right();
+  }
+
+  else if (ev.keyCode == 81) { // Q
+    g_camera.panLeft();
+  }
+
+  else if (ev.keyCode == 69) { // E
+    g_camera.panRight();
+  }
+
+  renderAllShapes();
+  console.log(ev.keyCode); 
+
+}
+
+// var g_eye=[0,0,3]; 
+// var g_at=[0,0,-100]; 
+// var g_up=[0,1,0]; 
+var g_camera; // =new Camera(); 
+
+var g_map=[ 
+  [1, 1, 1, 1, 1, 1, 1, 1], 
+  [1, 0, 0, 0, 0, 0, 0, 1], 
+  [1, 0, 0, 0, 0, 0, 0, 1], 
+  [1, 0, 0, 1, 1, 0, 0, 1], 
+  [1, 0, 0, 0, 0, 0, 0, 1], 
+  [1, 0, 0, 0, 0, 0, 0, 1],  
+  [1, 0, 0, 0, 1, 0, 0, 1], 
+  [1, 0, 0, 0, 0, 0, 0, 1], 
+]; 
+
+//function drawMap() { 
+//  for (x=0;x<32;x++) { 
+//    for (y=0;y<32;y++) { 
+//      if (x == 0 || x == 31 || y ==0 || y == 31) { 
+//      var body = new Cube(); 
+//      body.color = [.8,1,1,1]; 
+//      body.matrix.translate(0, -.75, 0); 
+//      body.matrix.scale(.4,.4,.4); 
+//      body.matrix.translate(x-16, 0, y-14); 
+//     body.renderfast()
+//   }
+
+//    }
+//  }
+//}
+function drawMap() { 
+    
+    var body = new Cube(); 
+    for (i=0; i<2; i++) {
+  for (x=0;x<32;x++) { 
+    for (y=0;y<32;y++) { 
+      // if (x == 0 || x == 31 || y ==0 || y == 31) { 
+        // var body = new Cube(); 
+
+        body.color = [.8,1,1,1]; 
+      body.matrix.translate(0, -.75, 0); 
+      body.matrix.scale(.4,.4,.4); 
+      body.matrix.translate(x-16, 0, y-16); 
+      body.renderfaster()
+
+    }
+  }
+}
+}
 
 // draw every shape that is supposed to be in the canvas
 function renderAllShapes() { 
 
   var startTime = performance.now(); 
 
-  var projMat=new Matrix4(); 
-  projMat.setPerspective(50, 1*canvas.width/canvas.height, 1, 100); 
-  gl.uniformMatrix4fv(u_ProjectionMatrix, false, projMat.elements); 
+  //var projMat=new Matrix4(); 
+  //projMat.setPerspective(50, 1*canvas.width/canvas.height, 1, 100); 
+  //gl.uniformMatrix4fv(u_ProjectionMatrix, false, projMat.elements); 
 
-  var viewMat=new Matrix4(); 
-  viewMat.setLookAt(g_eye[0], g_eye[1], g_eye[2], g_at[0], g_at[1], g_at[2], g_up[0], g_up[1], g_up[2]); 
-  gl.uniformMatrix4fv(u_ViewMatrix, false, viewMat.elements); 
+  //var viewMat=new Matrix4(); 
+
+  //viewMat.setLookAt(
+    //g_camera.eye.x, g_camera.eye.y, g_camera.eye.z, 
+    //g_camera.at.x, g_camera.at.y, g_camera.at.z, 
+    //g_camera.up.x, g_camera.up.y, g_camera.up.z); 
+  //gl.uniformMatrix4fv(u_ViewMatrix, false, viewMat.elements); 
+
+  gl.uniformMatrix4fv(
+    u_ProjectionMatrix,
+    false,
+    g_camera.projectionMatrix.elements
+  );
+
+  gl.uniformMatrix4fv(
+    u_ViewMatrix,
+    false,
+    g_camera.viewMatrix.elements
+  ); 
 
   var globalRotMat=new Matrix4().rotate(g_globalAngle, 0,1,0); 
   gl.uniformMatrix4fv(u_GlobalRotateMatrix, false, globalRotMat.elements); 
@@ -322,16 +428,32 @@ function renderAllShapes() {
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT); 
   gl.clear(gl.COLOR_BUFFER_BIT); 
 
+  drawMap(); 
+  
   var body = new Cube(); 
   body.color = [1,0,0,1]; 
   body.textureNum=0; 
-  body.matrix.translate(-.25, -.75, 0); 
-  body.matrix.rotate(-5,1,0,0); 
-  body.matrix.scale(.5, .3, .5); 
+  body.matrix.translate(0, -.75, 0);  
+  body.matrix.scale(10, 0, 10); 
+  body.matrix.translate(-.5, 0, -.5);  
   body.render(); 
 
+  var sky = new Cube(); 
+  sky.color = [1,0,0,1]; 
+  sky.textureNum=1;  
+  sky.matrix.scale(50, 50, 50); 
+  sky.matrix.translate(-.5, 0, -.5); 
+  sky.render(); 
+
+  var body = new Cube(); 
+  body.color = [1,0,0,1]; 
+  body.matrix.translate(-.25, -.75, 0); 
+  body.matrix.rotate(-5, 1,0,0); 
+  body.matrix.scale(.5, .3, .5); 
+
+
   var yellow = new Cube(); 
-  yellow.color = [1,1,0,1]; 
+  yellow.color = [1,0,0,1]; 
   yellow.matrix.setTranslate(0, -.5, 0); 
   yellow.matrix.rotate(-5,1,0,0); 
   yellow.matrix.rotate(-g_yellowAngle, 0,0,1); 
