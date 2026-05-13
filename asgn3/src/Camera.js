@@ -5,8 +5,8 @@ class Camera {
 
         this.fov = 60; 
 
-        this.eye = new Vector(32, 20, 32);
-        this.at = new Vector(5, 5, 32);
+        this.eye = new Vector(0, 20, 0);
+        this.at = new Vector(50, 0, 0);
         this.up=new Vector(0,1,0); 
 
         this.yaw = 0;

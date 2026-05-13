@@ -1,55 +1,65 @@
 // MultiAttributeSize_Interleaved.js
 // Vertex shader program
+
+// Kyra Hannah 
+// klhannah@ucsc.edu 
+
+// NOTE TO GRADER:  
+
+//  -   Blocky world randomly generates holes every time you reload
+//  -   Controls: wasd to move, click canvas to control camera, left click to remove block, right click to place one, q and e to pan left/right, r to move up, f to mvoe down 
+//  -   there's supposed to be dino fossils placed in the world, also some-what randomly generated between three models, though i'll be honest, I couldn't quite implement it in time 
+//  -  you can see the white of the fossil texture when moving underneath the map 
+//  -   the code is VERY messy. I'm sorry. I will update the live submission soon, so to whichever poor soul reads the zip file, if you have trouble, check that 
+//  -   console has some info on dino placement, though these are just debug comments, really 
+//  -   when clicking canvas, camera does a 180, just turn around to see world
+
 var VSHADER_SOURCE = `
-  precision mediump float; 
-  attribute vec4 a_Position; 
-  attribute vec2 a_UV; 
-  varying vec2 v_UV; 
-  uniform mat4 u_ModelMatrix; 
-  uniform mat4 u_GlobalRotateMatrix; 
-  uniform mat4 u_ViewMatrix; 
-  uniform mat4 u_ProjectionMatrix; 
-  void main() {
-    gl_Position = u_ProjectionMatrix * u_ViewMatrix * u_GlobalRotateMatrix * u_ModelMatrix * a_Position; 
-    v_UV = a_UV; 
-  }`
+precision mediump float;
+
+attribute vec4 a_Position;
+attribute vec2 a_UV;
+
+varying vec2 v_UV;
+
+uniform mat4 u_ModelMatrix;
+uniform mat4 u_GlobalRotateMatrix;
+uniform mat4 u_ViewMatrix;
+uniform mat4 u_ProjectionMatrix;
+
+void main() {
+    gl_Position =
+        u_ProjectionMatrix *
+        u_ViewMatrix *
+        u_GlobalRotateMatrix *
+        u_ModelMatrix *
+        a_Position;
+
+    v_UV = a_UV;
+}
+`;
 
 // Fragment shader program
 var FSHADER_SOURCE = `
-  precision mediump float; 
-  varying vec2 v_UV; 
-  uniform vec4 u_FragColor; 
-  uniform sampler2D u_Sampler0;
-  uniform sampler2D u_Sampler1;
-  uniform sampler2D u_Sampler2;
-  uniform sampler2D u_Sampler3;
-  uniform int u_whichTexture; 
-  uniform float u_texColorWeight;
-  void main() { 
+precision mediump float;
 
-    vec4 baseColor = u_FragColor;
-    vec4 texColor; 
-    
-    if (u_whichTexture == -2) { 
-      texColor = baseColor;
-    
-    } else if (u_whichTexture == 0) { 
-      texColor = texture2D(u_Sampler0, v_UV); 
-    } else if (u_whichTexture == 1) {
-        texColor = texture2D(u_Sampler1, v_UV);
-    } else if (u_whichTexture == 2) {
-        texColor = texture2D(u_Sampler2, v_UV);
-    } else if (u_whichTexture == 3) {
-        texColor = texture2D(u_Sampler3, v_UV);
+varying vec2 v_UV;
 
-    } else { 
-      texColor = vec4(1.0, .2, .2, 1.0);
-    }
+uniform vec4 u_FragColor;
+uniform sampler2D u_Sampler;
+uniform float u_texColorWeight;
 
-    gl_FragColor =
-      (1.0 - u_texColorWeight) * baseColor +
-      u_texColorWeight * texColor; 
-  }`
+void main() {
+
+    vec4 texColor = texture2D(u_Sampler, v_UV);
+
+    gl_FragColor = mix(
+        u_FragColor,
+        texColor,
+        u_texColorWeight
+    );
+}
+`;
 
 
 // setup 
@@ -63,11 +73,7 @@ let u_ModelMatrix;
 let u_ProjectionMatrix; 
 let u_ViewMatrix; 
 let u_GlobalRotateMatrix; 
-let u_Sampler0; 
-let u_Sampler1;
-let u_Sampler2;
-let u_Sampler3;
-let u_whichTexture;  
+let u_Sampler; 
 let u_texColorWeight; 
 
 let n; // interleave vertex shader 
@@ -78,6 +84,8 @@ const DIRT = 1;
 const FOSSIL = 2;
 const STONE = 3;
 const GRASS = 4; 
+
+let g_sharedCube; 
 
 let g_textures = []; 
 
@@ -92,19 +100,108 @@ let g_rotateX = 0; // left/right
 let g_lastFrameTime = performance.now();
 let g_fps = 0; 
 
+let g_dinoStructures = []; 
+
+function getStructureBounds(structure) {
+  let minY = Infinity, maxY = -Infinity;
+
+  for (const b of structure) {
+    minY = Math.min(minY, b[1]);
+    maxY = Math.max(maxY, b[1]);
+  }
+
+  return {
+    minY,
+    maxY,
+    height: maxY - minY
+  };
+}
+
+function getGroundY(x, z) {
+  for (let y = WORLD_Y - 1; y >= 0; y--) {
+    if (g_world[x][y][z] !== AIR) {
+      // ensure it's actually surface (air above it)
+      if (y === WORLD_Y - 1 || g_world[x][y + 1][z] === AIR) {
+        return y;
+      }
+    }
+  }
+  return 0;
+}
+
+function getStructureXZBounds(structure) {
+  let minX = Infinity, maxX = -Infinity;
+  let minZ = Infinity, maxZ = -Infinity;
+
+  for (const b of structure) {
+    minX = Math.min(minX, b[0]);
+    maxX = Math.max(maxX, b[0]);
+    minZ = Math.min(minZ, b[2]);
+    maxZ = Math.max(maxZ, b[2]);
+  }
+
+  return {
+    width: maxX - minX,
+    depth: maxZ - minZ
+  };
+}
+
+async function loadDinoStructures() {
+
+    const files = [
+        "dinos/stego.json",
+        "dinos/bronchiosaurus.json",
+        "dinos/crescenthorn.json"
+    ];
+
+    for (const file of files) {
+
+        const response = await fetch(file);
+
+        const data = normalizeStructure(await response.json());
+        g_dinoStructures.push(data);
+    }
+
+    console.log("Loaded dinos:",
+        g_dinoStructures);
+} 
+
+function normalizeStructure(structure) {
+
+    let minX = Infinity;
+    let minY = Infinity;
+    let minZ = Infinity;
+
+    for (const b of structure) {
+
+        minX = Math.min(minX, b[0]);
+        minY = Math.min(minY, b[1]);
+        minZ = Math.min(minZ, b[2]);
+    }
+
+    return structure.map(b => [
+        b[0] - minX,
+        b[1] - minY,
+        b[2] - minZ
+    ]);
+} 
 
 function setupWebGL() { 
   // Retrieve <canvas> element
   canvas = document.getElementById('webgl');
 
   // Get the rendering context for WebGL
-  gl = canvas.getContext("webgl", { preserveDrawingBuffer: true});  // helps fps performance 
+  // gl = canvas.getContext("webgl", { preserveDrawingBuffer: true});  // helps fps performance 
+  gl = canvas.getContext("webgl"); 
   if (!gl) {
     console.log('Failed to get the rendering context for WebGL');
     return;
   }
 
   gl.enable(gl.DEPTH_TEST); 
+
+  gl.enable(gl.CULL_FACE);
+  gl.cullFace(gl.BACK);
 }
 
 function connectVariablesToGLSL() { 
@@ -164,32 +261,11 @@ function connectVariablesToGLSL() {
   }
 
   // get the storage location of u_ProjectionMatrix  
-  u_Sampler0 = gl.getUniformLocation(gl.program, 'u_Sampler0'); 
-  if (!u_Sampler0) { 
-    console.log('Failed to get the storage location of u_Sampler0'); 
+  u_Sampler = gl.getUniformLocation(gl.program, 'u_Sampler'); 
+  if (!u_Sampler) { 
+    console.log('Failed to get the storage location of u_Sampler'); 
     return; 
   }
-
-  // get the storage location of u_ProjectionMatrix  
-  u_Sampler1 = gl.getUniformLocation(gl.program, 'u_Sampler1'); 
-  if (!u_Sampler1) { 
-    console.log('Failed to get the storage location of u_Sampler1'); 
-    return; 
-  } 
-
-  // get the storage location of u_ProjectionMatrix  
-  u_Sampler2 = gl.getUniformLocation(gl.program, 'u_Sampler2'); 
-  if (!u_Sampler2) { 
-    console.log('Failed to get the storage location of u_Sampler3'); 
-    return; 
-  } 
-
-  // get the storage location of u_ProjectionMatrix  
-  u_Sampler3 = gl.getUniformLocation(gl.program, 'u_Sampler3'); 
-  if (!u_Sampler3) { 
-    console.log('Failed to get the storage location of u_Sampler3'); 
-    return; 
-  } 
 
   // get the storage location of u_texColorWeight   
   u_texColorWeight = gl.getUniformLocation(gl.program, 'u_texColorWeight');
@@ -217,15 +293,6 @@ let g_yellowAnimation=false;
 let g_magentaAnimation=false; 
 
 function addActionsForHtmlUI() { 
-
-  // animation 
-  document.getElementById('animationYellowOffButton').onclick = function() { g_yellowAnimation=false;};  
-  document.getElementById('animationYellowOnButton').onclick = function() { g_yellowAnimation=true;}; 
-  document.getElementById('animationMagentaOffButton').onclick = function() { g_magentaAnimation=false;};  
-  document.getElementById('animationMagentaOnButton').onclick = function() { g_magentaAnimation=true;};  
-
-  document.getElementById('YellowSlide').addEventListener('mousemove', function() { g_yellowAngle = this.value; renderAllShapes(); });  
-  document.getElementById('MagentaSlide').addEventListener('mousemove', function() { g_magentaAngle = this.value; renderAllShapes(); }); 
 
   let isPointerLocked = false;
 
@@ -267,44 +334,64 @@ function addActionsForHtmlUI() {
 
 function initTextures() {
 
-  const files = [
-    "dirt.jpg",
-    "grass-block.jpg",
-    "fossil.jpg",
-    "stone.jpg"
-  ];
+    const files = [
+        "dirt.jpg",
+        "grass.jpg",
+        "fossil.jpg",
+        "stone.jpg"
+    ];
 
-  for (let i = 0; i < files.length; i++) {
+    for (let i = 0; i < files.length; i++) {
 
-    const image = new Image();
+        const image = new Image();
 
-    image.onload = function () {
+        image.onload = function () {
 
-      const tex = gl.createTexture();
+            const tex = gl.createTexture();
 
-      gl.activeTexture(gl.TEXTURE0 + i);
-      gl.bindTexture(gl.TEXTURE_2D, tex);
+            gl.activeTexture(gl.TEXTURE0);
+            gl.bindTexture(gl.TEXTURE_2D, tex);
 
-      gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
+            gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
 
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+            gl.texParameteri(
+                gl.TEXTURE_2D,
+                gl.TEXTURE_MIN_FILTER,
+                gl.NEAREST
+            );
 
-      gl.texImage2D(
-        gl.TEXTURE_2D,
-        0,
-        gl.RGB,
-        gl.RGB,
-        gl.UNSIGNED_BYTE,
-        image
-      );
+            gl.texParameteri(
+                gl.TEXTURE_2D,
+                gl.TEXTURE_MAG_FILTER,
+                gl.NEAREST
+            );
 
-      g_textures[i] = tex;
-    };
+            gl.texParameteri(
+                gl.TEXTURE_2D,
+                gl.TEXTURE_WRAP_S,
+                gl.CLAMP_TO_EDGE
+            );
 
-    image.src = files[i];
-  } 
+            gl.texParameteri(
+                gl.TEXTURE_2D,
+                gl.TEXTURE_WRAP_T,
+                gl.CLAMP_TO_EDGE
+            );
+
+            gl.texImage2D(
+                gl.TEXTURE_2D,
+                0,
+                gl.RGB,
+                gl.RGB,
+                gl.UNSIGNED_BYTE,
+                image
+            );
+
+            g_textures[i] = tex;
+        };
+
+        image.src = files[i];
+    }
 } 
 
 function blockToTexture(block) {
@@ -336,12 +423,13 @@ function sendTextureToTEXTURE0(image) {
   gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, image); 
 
   // set the texture unit 0 to the sampler 
-  gl.uniform1i(u_Sampler0, 0); 
+  gl.uniform1i(u_Sampler, 0); 
 
   console.log('finished loadTexture'); 
 
 }
-function main() {
+
+async function main() {
 
   // setup canvas and gl variables 
   setupWebGL(); 
@@ -352,7 +440,10 @@ function main() {
 
   // for camera.js access 
   g_camera = new Camera(canvas);  
+  g_sharedCube = new Cube(); 
   
+  await loadDinoStructures(); 
+
   mainWorldSetup(); 
   // generateWorld();   
 
@@ -490,63 +581,66 @@ function keydown(ev) {
 // var g_up=[0,1,0]; 
 var g_camera; // =new Camera(); 
 
-// var g_map=[ 
-//  [1, 1, 1, 1, 1, 1, 1, 1], 
-//  [1, 0, 0, 0, 0, 0, 0, 1], 
-// [1, 0, 0, 0, 0, 0, 0, 1], 
-//  [1, 0, 0, 1, 1, 0, 0, 1], 
-//  [1, 0, 0, 0, 0, 0, 0, 1], 
-//  [1, 0, 0, 0, 0, 0, 0, 1],  
-//  [1, 0, 0, 0, 1, 0, 0, 1], 
-//  [1, 0, 0, 0, 0, 0, 0, 1], 
-// ]; 
-
 const WORLD_X = 64;
 const WORLD_Y = 32;
 const WORLD_Z = 64;
 
 let g_world = []; 
 
-// function drawMap() { 
-
-//  for (let x = 0; x < 32; x++) {
-//    for (let y = 0; y < 32; y++) {
-//      if (g_map[x % 8][y % 8] == 1) {
-
-//        let body = new Cube();
-//        body.textureNum = 0;
-//        body.color = [1,1,1,1];
-//        body.matrix.translate(x-16, -0.75, y-16);
-
-//        body.renderfaster();
-
-//      }
-//    }
-//  }
-//}
-
 function drawWorld() {
-  for (let x = 0; x < WORLD_X; x++) {
-    for (let y = 0; y < WORLD_Y; y++) {
-      for (let z = 0; z < WORLD_Z; z++) {
 
-        const block = g_world[x][y][z];
-        if (block === AIR) continue;
+    const cube = g_sharedCube;
 
-        const cube = new Cube();
-        cube.textureNum = blockToTexture(block);
+    const px = Math.floor(g_camera.eye.x + WORLD_X / 2);
+    const pz = Math.floor(g_camera.eye.z + WORLD_Z / 2);
 
-        cube.matrix = new Matrix4();
-        cube.matrix.translate(
-          x - WORLD_X / 2,
-          y - 1,
-          z - WORLD_Z / 2
-        );
+    const VIEW_DISTANCE = 64;
+    const VIEW_DISTANCE_SQ =
+        VIEW_DISTANCE * VIEW_DISTANCE;
 
-        cube.render();
-      }
+    for (let x = 0; x < WORLD_X; x++) {
+
+        for (let y = 0; y < WORLD_Y; y++) {
+
+            for (let z = 0; z < WORLD_Z; z++) {
+
+                const block = g_world[x][y][z];
+
+                if (block === AIR)
+                    continue;
+
+                // skip hidden blocks
+                if (isBlockHidden(x, y, z))
+                    continue;
+
+                // distance culling
+                const dx = x - px;
+                const dz = z - pz;
+
+                if (
+                    dx * dx + dz * dz >
+                    VIEW_DISTANCE_SQ
+                ) {
+                    continue;
+                }
+
+                cube.textureNum =
+                    blockToTexture(block);
+
+                cube.useTexture = true;
+
+                cube.matrix.setIdentity();
+
+                cube.matrix.translate(
+                    x - WORLD_X / 2,
+                    y - 1,
+                    z - WORLD_Z / 2
+                );
+
+                cube.render();
+            }
+        }
     }
-  }
 }
 
 // for random world generation 
@@ -589,22 +683,32 @@ function generateWorld() {
 }
 
 
-function placeStructure(structure, startX, startY, startZ, blockTypeOverride = null) { 
+function placeStructure(structure, startX, startY, startZ, blockType = FOSSIL) {
 
-  for (let block of skeleton) {
+  let placed = 0;
+  let skipped = 0;
 
-    let x = startX + block[0];
-    let y = startY + block[1];
-    let z = startZ + block[2];
+  for (const block of structure) {
+
+    const x = startX + block[0];
+    const y = startY + block[1];
+    const z = startZ + block[2];
+
+    if (!inBounds(x, y, z)) {
+      skipped++;
+      continue;
+    }
 
     if (
-      x >= 0 && x < WORLD_X &&
-      y >= 0 && y < WORLD_Y &&
-      z >= 0 && z < WORLD_Z
+      g_world[x][y][z] === STONE ||
+      g_world[x][y][z] === DIRT
     ) {
-      g_world[x][y][z] = FOSSIL;
+      g_world[x][y][z] = blockType;
+      placed++;
     }
   }
+
+  console.log("Structure placed:", placed, "Skipped:", skipped);
 }
 
 function carveCave(cx, cy, cz, radius) {
@@ -665,19 +769,44 @@ function assertWorld() {
 function mainWorldSetup() {
 
   generateWorld();
-  assertWorld(); 
+  assertWorld();
 
-  // example caves
+  // caves
   for (let i = 0; i < 20; i++) {
     carveCave(
       Math.floor(Math.random() * WORLD_X),
       Math.floor(Math.random() * WORLD_Y),
       Math.floor(Math.random() * WORLD_Z),
       3 + Math.random() * 4
-    ); 
+    );
   }
 
-  // skeleton will be placed later once you load mcstructure data
+  const randomDino =
+  g_dinoStructures[Math.floor(Math.random() * g_dinoStructures.length)];
+
+  const boundsY = getStructureBounds(randomDino);
+  const boundsXZ = getStructureXZBounds(randomDino);
+
+  // safe XZ spawn
+  const dx = 8 + Math.floor(Math.random() * (WORLD_X - boundsXZ.width - 16));
+  const dz = 8 + Math.floor(Math.random() * (WORLD_Z - boundsXZ.depth - 16));
+
+  // reliable terrain
+  const groundY = getGroundY(dx, dz);
+
+  // vertical offset
+  const FLOAT = 3;
+
+  let dy = groundY + FLOAT - boundsY.minY;
+
+  // clamp inside world
+  dy = Math.max(0, Math.min(dy, WORLD_Y - boundsY.height - 1));
+
+  console.log("Placing dino at:", dx, dy, dz);
+  console.log("Dino size:", randomDino.length);
+  //console.log("Dino height:", bounds.height);
+
+  placeStructure(randomDino, 32, dy, dz, FOSSIL);
 }
 
 function getTargetBlock(maxDist = 6) {
@@ -708,7 +837,6 @@ function getTargetBlock(maxDist = 6) {
       continue;
     }
 
-    // hit a block → return both hit + previous empty
     return {
       hit: { x, y, z },
       place: lastEmpty
@@ -768,18 +896,19 @@ function renderAllShapes() {
   
   // Clear <canvas>
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT); 
-  gl.clear(gl.COLOR_BUFFER_BIT); 
+  // gl.clear(gl.COLOR_BUFFER_BIT); 
 
-  var sky = new Cube();
+  gl.disable(gl.CULL_FACE);
+
+  var sky = g_sharedCube;
+
   sky.useTexture = false;
-  sky.textureNum = 0; // irrelevant now
   sky.color = [0.4, 0.7, 1.0, 1.0];
-
-  sky.matrix = new Matrix4();
-  sky.matrix.translate(0, 0, 0); 
+  sky.matrix.setIdentity();
   sky.matrix.scale(200,200,200);
-  sky.matrix.translate(-0.5, 0, -0.5); 
-  sky.render(); 
+  sky.matrix.translate(-0.5, -0.5, -0.5);
+  sky.render();
+  gl.enable(gl.CULL_FACE);
 
   drawWorld(); 
   

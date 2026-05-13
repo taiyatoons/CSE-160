@@ -1,39 +1,56 @@
+let g_currentTexture = -1;
+
 class Cube {
-  constructor() {
-    this.color = [1,1,1,1];
-    this.matrix = new Matrix4();
-    this.textureNum = 0;
-    this.useTexture = true;
-  }
 
-  render() {
-
-    if (g_textures.length < 4) return; 
-
-    gl.uniformMatrix4fv(u_ModelMatrix, false, this.matrix.elements);
-
-    // 🚨 safety check (fixes async texture crash)
-    if (!g_textures[this.textureNum]) return;
-
-    gl.activeTexture(gl.TEXTURE0);
-    gl.bindTexture(gl.TEXTURE_2D, g_textures[this.textureNum]);
-    gl.uniform1i(u_Sampler0, 0);
-
-    if (!this.useTexture) {
-      gl.uniform1f(u_texColorWeight, 0.0);
-      gl.uniform4f(u_FragColor,
-        this.color[0],
-        this.color[1],
-        this.color[2],
-        this.color[3]
-      );
-      
-    } else {
-      gl.uniform1f(u_texColorWeight, 1.0);
+    constructor() {
+        this.color = [1,1,1,1];
+        this.matrix = new Matrix4();
+        this.textureNum = 0;
+        this.useTexture = true;
     }
 
-    gl.drawArrays(gl.TRIANGLES, 0, 36);
-  }
+    render() {
+
+        if (!g_textures[this.textureNum]) return;
+
+        gl.uniformMatrix4fv(
+            u_ModelMatrix,
+            false,
+            this.matrix.elements
+        );
+
+        // texture bind cache
+        if (g_currentTexture !== this.textureNum) {
+
+            gl.bindTexture(
+                gl.TEXTURE_2D,
+                g_textures[this.textureNum]
+            );
+
+            g_currentTexture = this.textureNum;
+        }
+
+        gl.uniform1i(u_Sampler, 0);
+
+        if (this.useTexture) {
+
+            gl.uniform1f(u_texColorWeight, 1.0);
+
+        } else {
+
+            gl.uniform1f(u_texColorWeight, 0.0);
+
+            gl.uniform4f(
+                u_FragColor,
+                this.color[0],
+                this.color[1],
+                this.color[2],
+                this.color[3]
+            );
+        }
+
+        gl.drawArrays(gl.TRIANGLES, 0, 36);
+    }
 } 
 
 function initCubeBuffer() {
