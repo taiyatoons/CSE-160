@@ -5,9 +5,13 @@ class Camera {
 
         this.fov = 60; 
 
-        this.eye=new Vector(0,0,3); 
-        this.at=new Vector(0,0,-100); 
+        this.eye = new Vector(32, 20, 32);
+        this.at = new Vector(5, 5, 32);
         this.up=new Vector(0,1,0); 
+
+        this.yaw = 0;
+        this.pitch = 0;
+        this.sensitivity = 0.1;
 
         this.viewMatrix = new Matrix4();
         this.projectionMatrix = new Matrix4();
@@ -34,6 +38,38 @@ class Camera {
             far // far 
         );
     }
+
+    updateDirectionFromAngles() {
+        let radYaw = this.yaw * Math.PI / 180;
+        let radPitch = this.pitch * Math.PI / 180;
+
+        let dir = new Vector(
+            Math.cos(radPitch) * Math.sin(radYaw),
+            Math.sin(radPitch),
+            Math.cos(radPitch) * Math.cos(radYaw)
+        );
+
+        this.at = this.eye.add(dir);
+        this.updateView();
+    }
+
+    getForwardFlat() {
+        let f = this.at.subtract(this.eye);
+
+        // remove Y component so we stay grounded
+        f.y = 0;
+
+        return f.divide(f.length());
+    }
+
+    getRightFlat() {
+        let f = this.getForwardFlat();
+        return new Vector(-f.z, 0, f.x);
+    } 
+    // getForward() {
+        // let f = this.at.subtract(this.eye);
+        // return f.divide(f.length());
+    // }
 
     forward() { 
         var f = this.at.subtract(this.eye); 
@@ -71,6 +107,26 @@ class Camera {
         this.updateView();       
     }
 
+    moveUp() {
+        var u = this.up;
+        u = u.divide(u.length()); // normalize just in case
+
+        this.eye = this.eye.add(u);
+        this.at = this.at.add(u);
+
+        this.updateView();
+    }
+
+    moveDown() {
+        var u = this.up;
+        u = u.divide(u.length());
+
+        this.eye = this.eye.subtract(u);
+        this.at = this.at.subtract(u);
+
+        this.updateView();
+    } 
+    
     panLeft() {
 
         var f = this.at.subtract(this.eye);

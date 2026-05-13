@@ -21,6 +21,14 @@ class Vector {
         );
     }
 
+    multiply(s) {
+        return new Vector(
+            this.x * s,
+            this.y * s,
+            this.z * s
+        );
+    }
+
     divide(s) {
         return new Vector(
             this.x / s,
